@@ -5,7 +5,9 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Next.js scaffolding for scavenger hunt app\n\nSet up modern Next.js app with TypeScript, Tailwind CSS, ESLint, and App Router.\nPrepared for future features including login and PostgreSQL data storage.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
