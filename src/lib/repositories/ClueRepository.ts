@@ -43,45 +43,17 @@ export class ClueRepository {
     return result.rows;
   }
 
-  // Update clue
-  static async update(id: number, input: Partial<CreateClueInput>): Promise<Clue | null> {
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
-
-    if (input.game_id !== undefined) {
-      updates.push(`game_id = $${paramIndex++}`);
-      values.push(input.game_id);
-    }
-    if (input.type !== undefined) {
-      updates.push(`type = $${paramIndex++}`);
-      values.push(input.type);
-    }
-    if (input.payload !== undefined) {
-      updates.push(`payload = $${paramIndex++}::jsonb`);
-      values.push(JSON.stringify(input.payload));
-    }
-    if (input.answer_type !== undefined) {
-      updates.push(`answer_type = $${paramIndex++}`);
-      values.push(input.answer_type);
-    }
-    if (input.answer_payload !== undefined) {
-      updates.push(`answer_payload = $${paramIndex++}`);
-      values.push(input.answer_payload);
-    }
-    if (input.context !== undefined) {
-      updates.push(`context = $${paramIndex++}`);
-      values.push(input.context);
-    }
-
-    if (updates.length === 0) {
-      return this.findById(id);
-    }
-
-    values.push(id);
+  // Update clue - requires all fields
+  static async update(id: number, input: CreateClueInput): Promise<Clue | null> {
     const result = await sql<Clue>`
       UPDATE clues
-      SET ${sql.raw(updates.join(', '))}
+      SET
+        game_id = ${input.game_id},
+        type = ${input.type},
+        payload = ${JSON.stringify(input.payload)}::jsonb,
+        answer_type = ${input.answer_type},
+        answer_payload = ${input.answer_payload},
+        context = ${input.context || null}
       WHERE id = ${id}
       RETURNING *
     `;

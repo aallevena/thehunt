@@ -38,35 +38,67 @@ export class UserRepository {
 
   // Update user
   static async update(id: number, input: Partial<CreateUserInput>): Promise<User | null> {
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
-
-    if (input.first_name !== undefined) {
-      updates.push(`first_name = $${paramIndex++}`);
-      values.push(input.first_name);
-    }
-    if (input.last_name !== undefined) {
-      updates.push(`last_name = $${paramIndex++}`);
-      values.push(input.last_name);
-    }
-    if (input.email !== undefined) {
-      updates.push(`email = $${paramIndex++}`);
-      values.push(input.email);
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(input).length === 0) {
       return this.findById(id);
     }
 
-    values.push(id);
-    const result = await sql<User>`
-      UPDATE users
-      SET ${sql.raw(updates.join(', '))}
-      WHERE id = ${id}
-      RETURNING *
-    `;
-    return result.rows[0] || null;
+    const fields: string[] = [];
+    if (input.first_name !== undefined) fields.push('first_name');
+    if (input.last_name !== undefined) fields.push('last_name');
+    if (input.email !== undefined) fields.push('email');
+
+    if (fields.length === 0) {
+      return this.findById(id);
+    }
+
+    // Build dynamic query based on fields to update
+    if (fields.length === 3) {
+      const result = await sql<User>`
+        UPDATE users SET first_name = ${input.first_name}, last_name = ${input.last_name}, email = ${input.email}
+        WHERE id = ${id} RETURNING *
+      `;
+      return result.rows[0] || null;
+    } else if (fields.length === 2) {
+      if (fields.includes('first_name') && fields.includes('last_name')) {
+        const result = await sql<User>`
+          UPDATE users SET first_name = ${input.first_name}, last_name = ${input.last_name}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else if (fields.includes('first_name') && fields.includes('email')) {
+        const result = await sql<User>`
+          UPDATE users SET first_name = ${input.first_name}, email = ${input.email}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else {
+        const result = await sql<User>`
+          UPDATE users SET last_name = ${input.last_name}, email = ${input.email}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      }
+    } else {
+      if (fields.includes('first_name')) {
+        const result = await sql<User>`
+          UPDATE users SET first_name = ${input.first_name}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else if (fields.includes('last_name')) {
+        const result = await sql<User>`
+          UPDATE users SET last_name = ${input.last_name}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else {
+        const result = await sql<User>`
+          UPDATE users SET email = ${input.email}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      }
+    }
   }
 
   // Delete user

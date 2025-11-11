@@ -38,35 +38,67 @@ export class GameRepository {
 
   // Update game
   static async update(id: number, input: Partial<CreateGameInput>): Promise<Game | null> {
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
-
-    if (input.title !== undefined) {
-      updates.push(`title = $${paramIndex++}`);
-      values.push(input.title);
-    }
-    if (input.description !== undefined) {
-      updates.push(`description = $${paramIndex++}`);
-      values.push(input.description);
-    }
-    if (input.owning_user_id !== undefined) {
-      updates.push(`owning_user_id = $${paramIndex++}`);
-      values.push(input.owning_user_id);
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(input).length === 0) {
       return this.findById(id);
     }
 
-    values.push(id);
-    const result = await sql<Game>`
-      UPDATE game
-      SET ${sql.raw(updates.join(', '))}
-      WHERE id = ${id}
-      RETURNING *
-    `;
-    return result.rows[0] || null;
+    const fields: string[] = [];
+    if (input.title !== undefined) fields.push('title');
+    if (input.description !== undefined) fields.push('description');
+    if (input.owning_user_id !== undefined) fields.push('owning_user_id');
+
+    if (fields.length === 0) {
+      return this.findById(id);
+    }
+
+    // Build dynamic query based on fields to update
+    if (fields.length === 3) {
+      const result = await sql<Game>`
+        UPDATE game SET title = ${input.title}, description = ${input.description}, owning_user_id = ${input.owning_user_id}
+        WHERE id = ${id} RETURNING *
+      `;
+      return result.rows[0] || null;
+    } else if (fields.length === 2) {
+      if (fields.includes('title') && fields.includes('description')) {
+        const result = await sql<Game>`
+          UPDATE game SET title = ${input.title}, description = ${input.description}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else if (fields.includes('title') && fields.includes('owning_user_id')) {
+        const result = await sql<Game>`
+          UPDATE game SET title = ${input.title}, owning_user_id = ${input.owning_user_id}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else {
+        const result = await sql<Game>`
+          UPDATE game SET description = ${input.description}, owning_user_id = ${input.owning_user_id}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      }
+    } else {
+      if (fields.includes('title')) {
+        const result = await sql<Game>`
+          UPDATE game SET title = ${input.title}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else if (fields.includes('description')) {
+        const result = await sql<Game>`
+          UPDATE game SET description = ${input.description}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      } else {
+        const result = await sql<Game>`
+          UPDATE game SET owning_user_id = ${input.owning_user_id}
+          WHERE id = ${id} RETURNING *
+        `;
+        return result.rows[0] || null;
+      }
+    }
   }
 
   // Delete game
